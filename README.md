@@ -1,12 +1,9 @@
-.:Scripts for a simulation study used in (bielejec et al 2014):.
-------------------------------------------------------------
+*.:Scripts for a simulation study used in (bielejec et al 2014):.*
 
-Dependencies
-------------
+*DEPENDENCIES*
 - compiled BEAST jar with PIBUSS core and parsers enabled.
 
-USAGE
------
+*USAGE*
 
 There are two scripts. One is set up for a desktop type of workstation, second will run on a PBS/TORQUE cluster.
 Adjust the simulation settings and paths and simply do:
@@ -19,8 +16,7 @@ or reserve your time on the cluster and do:
 
 There is also an R script for analysis the output.
 
-LICENSE
-=======
+*LICENSE*
 
   "THE BEER-WARE LICENSE" (Revision 42):
   <filip.bielejec(sorry_spybots)rega.kuleuve.be> wrote this software. As long as you retain this notice you
