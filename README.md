@@ -1,4 +1,4 @@
-###### .:Scripts for a simulation study used in (bielejec et al 2014):.
+#### .:Scripts for a simulation study used in (bielejec et al 2014):.
 
 **DEPENDENCIES**
 - compiled BEAST jar with PIBUSS core and parsers enabled.
