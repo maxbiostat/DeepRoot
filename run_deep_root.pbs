@@ -1,0 +1,110 @@
+#!/bin/bash -l
+
+module purge
+module load java cuda
+
+export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+export PKG_CONFIG_PATH=$HOME/lib/pkgconfig:$PKG_CONFIG_PATH
+
+#BEAGLE_PATH=/usr/local/lib
+BEAGLE_PATH=$HOME/lib
+
+# constant population size
+POP_SIZE=(5000 1000 500 100 50 10 5 1)
+# number of iterations per population size
+N=100
+# number of parallel threads to run
+BATCH=32
+# burnin for LogAnalyser
+BURNIN=50000
+
+SEED=123
+DEVICE=0
+CLOCK_RATE=3E-3
+LINE_NUMBER=162
+FILE=generate_sequences.xml
+TAG='\/\>'
+TAB='\t'
+NEW='\n'
+
+for i in "${POP_SIZE[@]}"; do
+  
+  # make dir, copy files
+  DIR=popSize$i
+  mkdir $DIR
+  cp generate_sequences_old.xml $DIR/$FILE
+  cd $DIR
+  
+  # create results file
+  echo -e simulation $TAB seed $TAB time $TAB simulatedPopSize $TAB simulatedRootHeight $TAB rootHeight.mean $TAB rootHeight.stdErr $TAB rootHeight.median $TAB rootHeight.hpdLower $TAB rootHeight.hpdUpper $TAB rootHeight.ESS $TAB simulatedClockRate clockRate.mean $TAB clockRate.stdErr $TAB clockRate.median $TAB clockRate.hpdLower $TAB clockRate.hpdUpper $TAB clockRate.ESS >> ../resultsPopSize$i
+  
+  # in line number '$LINE_NUMBER' replace everything after 'value=' with 'value="$i"/>'
+  sed ''$LINE_NUMBER's/value=.*/ value="'$i'"'$TAG'/g' -i $FILE
+  
+  # create parallel loop of size BATCH
+  for ((j = 1 ; j <= N ; j += BATCH)); do
+    
+    for ((k = j ; k < j + BATCH ; k++)); do
+      
+      if [[ k -le N ]]; then
+        
+        # BACKGROUND THREAD
+        (
+          
+          # create sub-directory
+          mkdir $k
+          cp $FILE $k/$FILE
+          cd $k
+          
+          # increment seed
+          let NEWSEED=$SEED+$k
+          
+          # generate sequences
+          ROOT_HEIGHT=$(java -Djava.library.path=$BEAGLE_PATH -Dbeagle.resource.order=$DEVICE -jar ../../beast.jar -beagle_CPU -beagle_double -beagle_scaling always -overwrite -seed $NEWSEED $FILE | grep height | cut -c17-35)
+          
+          echo "Simulated root height: $ROOT_HEIGHT"
+          
+          # compile XML
+          python ../../fasta_to_nexus.py sequences.fasta sequences.nexus
+          java -jar ../../NexusToXML.jar sequences.nexus sequences.xml
+          cat ../../first_part.xml sequences.xml ../../last_part.xml > mcmc.xml
+          
+          # run analysis
+          TIC="$(date +%s)"
+          java -Xms64m -Xmx1024m -Djava.library.path=$BEAGLE_PATH -jar ../../beast.jar -beagle_CPU -beagle_double -beagle_scaling always -seed $NEWSEED -overwrite mcmc.xml
+          TOC="$(date +%s)"
+          TIME=$(echo "scale=5; ($TOC-$TIC)/3600" | bc)
+          
+          echo "Finished in: $TIME h"
+          
+          # analyse results
+          java -cp ../../beast.jar dr.app.tools.LogAnalyser -burnin $BURNIN estimated.log >> summary
+          
+          # log the results
+          echo -ne "$k $TAB $NEWSEED $TAB $TIME $TAB $i $TAB $ROOT_HEIGHT $TAB $(grep treeModel.rootHeight summary | cut -d $'\t' -f2-7) $TAB $CLOCK_RATE $TAB $(grep clock.rate summary | cut -d $'\t' -f2-7)" $NEW >> ../../resultsPopSize$i
+          
+          # go one directory up
+          cd ../
+          
+          # clean up
+          rm -r $k
+          
+        )&
+        #END: BACKGROUND THREAD
+        
+      fi # END: k check
+      
+    done # END: k loop
+    
+    # wait for all spawned sub-processes to finish
+    wait
+    
+  done #END: parallel j loop
+  
+  # come back to the root directory
+  cd ../
+  
+  # clean up
+  rm -r $DIR
+  
+done # END: i loop
