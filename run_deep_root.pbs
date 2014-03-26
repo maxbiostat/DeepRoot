@@ -6,17 +6,17 @@ module load java cuda
 export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
 export PKG_CONFIG_PATH=$HOME/lib/pkgconfig:$PKG_CONFIG_PATH
 
-#BEAGLE_PATH=/usr/local/lib
 BEAGLE_PATH=$HOME/lib
 
 # constant population size
-POP_SIZE=(5000 1000 500 100 50 10 5 1)
+POP_SIZE=(1 5 10 50 100 500 1000 5000)
+
 # number of iterations per population size
 N=100
+
 # number of parallel threads to run
 BATCH=32
-# burnin for LogAnalyser
-BURNIN=50000
+
 
 SEED=123
 DEVICE=0
@@ -26,13 +26,16 @@ FILE=generate_sequences.xml
 TAG='\/\>'
 TAB='\t'
 NEW='\n'
+# burnin for LogAnalyser
+BURNIN=50000
+
 
 for i in "${POP_SIZE[@]}"; do
   
   # make dir, copy files
   DIR=popSize$i
   mkdir $DIR
-  cp generate_sequences_old.xml $DIR/$FILE
+  cp $FILE $DIR/$FILE
   cd $DIR
   
   # create results file
@@ -65,13 +68,11 @@ for i in "${POP_SIZE[@]}"; do
           echo "Simulated root height: $ROOT_HEIGHT"
           
           # compile XML
-          python ../../fasta_to_nexus.py sequences.fasta sequences.nexus
-          java -jar ../../NexusToXML.jar sequences.nexus sequences.xml
           cat ../../first_part.xml sequences.xml ../../last_part.xml > mcmc.xml
           
           # run analysis
           TIC="$(date +%s)"
-          java -Xms64m -Xmx1024m -Djava.library.path=$BEAGLE_PATH -jar ../../beast.jar -beagle_CPU -beagle_double -beagle_scaling always -seed $NEWSEED -overwrite mcmc.xml
+          java -Djava.library.path=$BEAGLE_PATH -jar ../../beast.jar -beagle_CPU -beagle_double -beagle_scaling always -seed $NEWSEED -overwrite mcmc.xml
           TOC="$(date +%s)"
           TIME=$(echo "scale=5; ($TOC-$TIC)/3600" | bc)
           
