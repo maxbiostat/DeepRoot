@@ -182,9 +182,9 @@
 		</nodeHeights>
 	</treeModel>
 
-<!--    <report>-->
-<!--        Tree: <tree idref="treeModel"/>-->
-<!--    </report>-->
+    <report>
+        Tree: <tree idref="treeModel"/>
+    </report>
 	
 	<frequencyModel id="freqModel" dataType="codon-universal">
         <frequencies>
@@ -277,19 +277,19 @@
 			<yangCodonModel idref="yang.10"/>
         </epoch>
         
-        <epoch id="epoch1" transitionTime="50">
+        <epoch id="epoch2" transitionTime="50">
 			<yangCodonModel idref="yang.50"/>
         </epoch>
         
-        <epoch id="epoch1" transitionTime="100">
+        <epoch id="epoch3" transitionTime="100">
 			<yangCodonModel idref="yang.100"/>
         </epoch>
         
-        <epoch id="epoch1" transitionTime="500">
+        <epoch id="epoch4" transitionTime="500">
 			<yangCodonModel idref="yang.500"/>
         </epoch>
         
-        <epoch id="epoch1" transitionTime="1000">
+        <epoch id="epoch5" transitionTime="1000">
 			<yangCodonModel idref="yang.1000"/>
         </epoch>
         
@@ -321,7 +321,7 @@
   			<frequencyModel idref="freqModel"/>
 		</partition>
 		
-	</oldBeagleSequenceSimulator>
+	</beagleSequenceSimulator>
 
     <report fileName="sequences.xml">
         <beagleSequenceSimulator idref="simulator"/>
